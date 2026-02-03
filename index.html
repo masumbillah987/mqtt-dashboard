@@ -22,6 +22,8 @@
       margin: 15px;
       border-radius: 12px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: inline-block;
+      min-width: 250px;
     }
     button {
       padding: 12px 25px;
@@ -36,6 +38,24 @@
       font-size: 18px;
       margin-top: 10px;
     }
+    .status {
+      display: inline-block;
+      width: 80px;
+      padding: 6px;
+      border-radius: 7px;
+      margin-top: 6px;
+      margin-bottom: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .on {
+      background-color: #ff4444;
+    }
+    .off {
+      background-color: #44ff88;
+      color: #222;
+    }
   </style>
 </head>
 
@@ -46,25 +66,31 @@
 <!-- Light 1 -->
 <div class="card">
   <h2>Light 1</h2>
-  <button onclick="publishMessage('home/light1','ON')">ON</button>
-  <button onclick="publishMessage('home/light1','OFF')">OFF</button>
+  <div id="light1Status" class="status off">OFF</div>
+  <br>
+  <button onclick="publishMessage('home/light1','ON')" id="light1BtnOn">ON</button>
+  <button onclick="publishMessage('home/light1','OFF')" id="light1BtnOff">OFF</button>
 </div>
 
 <!-- Light 2 -->
 <div class="card">
   <h2>Light 2</h2>
-  <button onclick="publishMessage('home/light2','ON')">ON</button>
-  <button onclick="publishMessage('home/light2','OFF')">OFF</button>
+  <div id="light2Status" class="status off">OFF</div>
+  <br>
+  <button onclick="publishMessage('home/light2','ON')" id="light2BtnOn">ON</button>
+  <button onclick="publishMessage('home/light2','OFF')" id="light2BtnOff">OFF</button>
 </div>
 
 <!-- Fan Control -->
 <div class="card">
   <h2>Fan</h2>
-  <button onclick="publishMessage('home/fan','ON')">ON</button>
-  <button onclick="publishMessage('home/fan','OFF')">OFF</button>
+  <div id="fanStatus" class="status off">OFF</div>
+  <br>
+  <button onclick="publishMessage('home/fan','ON')" id="fanBtnOn">ON</button>
+  <button onclick="publishMessage('home/fan','OFF')" id="fanBtnOff">OFF</button>
 
   <h3>Fan Speed / Voltage</h3>
-  <input type="range" min="0" max="100" value="50" id="fanSlider" 
+  <input type="range" min="0" max="100" value="50" id="fanSlider"
          oninput="updateFanSpeed(this.value)">
   <div class="value">
     Speed: <span id="speedValue">50</span> %
@@ -73,11 +99,11 @@
 
 <script>
   // ======= MQTT Broker Settings =======
-  const broker = "broker.hivemq.com";
+  const broker = "ac06394e5b7343cdb4c4eba9ce00f71a.s1.eu.hivemq.cloud";
   const port = 8884;                   // WebSocket port
   const username = "masum_user";
   const password = "Mmasum.Bbillah1122";
-  const clientId = "web_" + Math.floor(Math.random() * 1000);
+  const clientId = "web_" + Math.floor(Math.random() * 10000);
 
   // ======= Create MQTT Client =======
   const client = new Paho.MQTT.Client(broker, port, "/mqtt", clientId);
@@ -107,6 +133,7 @@
   // ======= Connection Failure Callback =======
   function onFailure(responseObject) {
     console.log("Connection failed: " + responseObject.errorMessage);
+    alert("MQTT Connection failed: " + responseObject.errorMessage);
   }
 
   // ======= Handle Incoming Messages =======
@@ -115,26 +142,49 @@
     const payload = message.payloadString;
     console.log("Message arrived: " + topic + " = " + payload);
 
-    // Update Light 1 button color
+    // Update Light 1 status
     if(topic === "home/light1/status") {
-      document.querySelector('#light1Btn')?.setAttribute('style', 
-        `background:${payload==='ON'?'#ff4444':'#44ff88'}`);
+      const statusDiv = document.getElementById("light1Status");
+      if(payload === "ON") {
+        statusDiv.textContent = "ON";
+        statusDiv.classList.add("on");
+        statusDiv.classList.remove("off");
+      } else {
+        statusDiv.textContent = "OFF";
+        statusDiv.classList.add("off");
+        statusDiv.classList.remove("on");
+      }
     }
 
-    // Update Light 2 button color
+    // Update Light 2 status
     if(topic === "home/light2/status") {
-      document.querySelector('#light2Btn')?.setAttribute('style', 
-        `background:${payload==='ON'?'#ff4444':'#44ff88'}`);
+      const statusDiv = document.getElementById("light2Status");
+      if(payload === "ON") {
+        statusDiv.textContent = "ON";
+        statusDiv.classList.add("on");
+        statusDiv.classList.remove("off");
+      } else {
+        statusDiv.textContent = "OFF";
+        statusDiv.classList.add("off");
+        statusDiv.classList.remove("on");
+      }
     }
 
-    // Update Fan button color and text
+    // Update Fan status
     if(topic === "home/fan/status") {
-      document.querySelector('#fanBtn')?.setAttribute('style', 
-        `background:${payload==='ON'?'#ff4444':'#44ff88'}`);
-      document.querySelector('#fanBtn')?.innerText = payload==='ON'?'Fan OFF':'Fan ON';
+      const statusDiv = document.getElementById("fanStatus");
+      if(payload === "ON") {
+        statusDiv.textContent = "ON";
+        statusDiv.classList.add("on");
+        statusDiv.classList.remove("off");
+      } else {
+        statusDiv.textContent = "OFF";
+        statusDiv.classList.add("off");
+        statusDiv.classList.remove("on");
+      }
     }
 
-    // Update fan slider
+    // Update Fan speed
     if(topic === "home/fan/speed") {
       document.getElementById("fanSlider").value = payload;
       document.getElementById("speedValue").innerText = payload;
@@ -149,6 +199,7 @@
       client.send(message);
       console.log("Published: " + topic + " = " + payload);
     } else {
+      alert("MQTT not connected.\nTry refreshing the page or check your internet.");
       console.log("MQTT not connected");
     }
   }
