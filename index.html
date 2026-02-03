@@ -73,10 +73,10 @@
 
 <script>
   // ======= MQTT Broker Settings =======
-  const broker = "ac06394e5b7343cdb4c4eba9ce00f71a.s1.eu.hivemq.cloud";   // e.g., xxxxx.s1.eu.hivemq.cloud
+  const broker = "ac06394e5b7343cdb4c4eba9ce00f71a.s1.eu.hivemq.cloud";
   const port = 8884;                   // WebSocket port
-  const username = "masum_user";    // from Step 2
-  const password = "Mmasum.Bbillah1122";    // from Step 2
+  const username = "masum_user";
+  const password = "Mmasum.Bbillah1122";
   const clientId = "web_" + Math.floor(Math.random() * 1000);
 
   // ======= Create MQTT Client =======
@@ -97,10 +97,11 @@
   // ======= Connection Success Callback =======
   function onConnect() {
     console.log("Connected to MQTT broker!");
-    // Subscribe to status topics (optional)
+    // Subscribe to status topics for real-time updates
     client.subscribe("home/light1/status");
     client.subscribe("home/light2/status");
     client.subscribe("home/fan/status");
+    client.subscribe("home/fan/speed");
   }
 
   // ======= Connection Failure Callback =======
@@ -110,7 +111,34 @@
 
   // ======= Handle Incoming Messages =======
   client.onMessageArrived = function(message) {
-    console.log("Message arrived: " + message.destinationName + " = " + message.payloadString);
+    const topic = message.destinationName;
+    const payload = message.payloadString;
+    console.log("Message arrived: " + topic + " = " + payload);
+
+    // Update Light 1 button color
+    if(topic === "home/light1/status") {
+      document.querySelector('#light1Btn')?.setAttribute('style', 
+        `background:${payload==='ON'?'#ff4444':'#44ff88'}`);
+    }
+
+    // Update Light 2 button color
+    if(topic === "home/light2/status") {
+      document.querySelector('#light2Btn')?.setAttribute('style', 
+        `background:${payload==='ON'?'#ff4444':'#44ff88'}`);
+    }
+
+    // Update Fan button color and text
+    if(topic === "home/fan/status") {
+      document.querySelector('#fanBtn')?.setAttribute('style', 
+        `background:${payload==='ON'?'#ff4444':'#44ff88'}`);
+      document.querySelector('#fanBtn')?.innerText = payload==='ON'?'Fan OFF':'Fan ON';
+    }
+
+    // Update fan slider
+    if(topic === "home/fan/speed") {
+      document.getElementById("fanSlider").value = payload;
+      document.getElementById("speedValue").innerText = payload;
+    }
   };
 
   // ======= Publish Function =======
@@ -128,9 +156,10 @@
   // ======= Fan Slider =======
   function updateFanSpeed(value) {
     document.getElementById("speedValue").innerText = value;
-    publishMessage("home/fan/speed", value); // Publish fan speed to MQTT
+    publishMessage("home/fan/speed", value); // Publish fan speed
   }
 </script>
 
 </body>
 </html>
+
